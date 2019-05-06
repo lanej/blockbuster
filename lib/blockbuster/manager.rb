@@ -1,9 +1,14 @@
+require 'forwardable'
+
 module Blockbuster
   # Manages cassette packaging and unpackaging
   class Manager
     include Blockbuster::OutputHelpers
+    extend Forwardable
 
     attr_accessor :comparator
+
+    def_delegators :comparator, :inventory
 
     def initialize(instance_configuration = Blockbuster::Configuration.new)
       yield configuration if block_given?
@@ -21,6 +26,7 @@ module Blockbuster
     # extracts cassettes from a tar.gz file
     #
     # tracks a md5 hash of each file in the tarball
+    # FIXME: remove direct File usage
     def rent
       master_file_path = @extraction_list.master.file_path
 
@@ -35,7 +41,7 @@ module Blockbuster
 
       @extraction_list.extract_cassettes
 
-      @comparator.store_current_delta_files if configuration.deltas_enabled?
+      comparator.store_current_delta_files if configuration.deltas_enabled?
     end
 
     # repackages cassettes into a compressed tarball
@@ -43,7 +49,7 @@ module Blockbuster
       return unless comparator.rewind?(configuration.cassette_files) || force
 
       silent_puts "Recreating cassette file #{@extraction_list.primary.target_path}"
-      @extraction_list.primary.create_cassette_file
+      @extraction_list.primary.update_cassette_file
     end
 
     alias setup rent

@@ -44,6 +44,7 @@ module Blockbuster
       end
     end
 
+    # FIXME: Manager should do the talking
     def compare(key, new_digest)
       digest = inventory[key]
 
@@ -56,6 +57,8 @@ module Blockbuster
       end
     end
 
+    # FIXME: Remove the side-effect of setting @deleted and @edited
+    # FIXME: What other files would we be rewinding?
     def rewind?(files) # rubocop:disable Metrics/AbcSize
       base_files = []
 
@@ -75,6 +78,7 @@ module Blockbuster
       !edited.empty?
     end
 
+    # FIXME: the manager should do the talking.  Remove this methods side-effects
     def any_deleted?
       if configuration.deltas_disabled? && !@deleted.empty?
         silent_puts "Cassettes deleted: #{@deleted}"

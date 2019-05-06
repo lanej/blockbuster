@@ -1,8 +1,12 @@
 module Blockbuster
   # pure ruby implmentation of tar gzip and diff
   module Packager
+    def update_cassette_file
+      clean_cassette_file
+      create_cassette_file
+    end
+
     def create_cassette_file
-      FileUtils.rm(file_path) if File.exist?(file_path)
       File.open(target_path, 'wb') do |file|
         Zlib::GzipWriter.wrap(file) do |gz|
           Gem::Package::TarWriter.new(gz) do |tar|
@@ -12,6 +16,10 @@ module Blockbuster
           end
         end
       end
+    end
+
+    def clean_cassette_file
+      FileUtils.rm(file_path) if File.exist?(file_path)
     end
 
     def tar_file(tar, file)

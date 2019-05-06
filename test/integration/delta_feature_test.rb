@@ -2,159 +2,141 @@ require 'test_helper'
 require 'yaml'
 
 describe 'DeltaFeature' do
-  let(:base_dir)    { 'test/integration_fixtures' }
-  let(:unique_id)   { Digest::MD5.hexdigest(location) }
-  let(:unique_dir)  { "#{base_dir}/#{unique_id}" }
-  let(:config)      { Blockbuster::Configuration.new }
-  let(:manager)     { Blockbuster::Manager.new(config) }
+  let(:config)  { Blockbuster::Configuration.new }
+  let(:context) { Support::Context.new(configuration: config) }
 
   before do
-    FileUtils.mkdir_p(unique_dir)
-    FileUtils.copy("#{base_dir}/vcr_cassettes.tar.gz", "#{unique_dir}/vcr_cassettes.tar.gz", preserve: true)
-    config.test_directory = unique_dir
     config.silent = true
+    context.setup
+
+    context.master_archive.generate(cassettes: 3)
   end
 
   after do
-    FileUtils.rm_r(unique_dir)
+    context.teardown
   end
 
   describe 'feature disabled' do
     it 'does not initialize deltas' do
       Blockbuster::Delta.expects(:initialize_for_each).never
-      manager.rent
-      manager.drop_off
+      context.managed { nil }
     end
 
     it 'does not change master if no files have changed' do
-      current_master_mtime = File.mtime(config.master_tar_file_path)
+      current_master_mtime = context.master_archive.mtime
 
-      manager.rent
-      manager.drop_off
+      context.managed { nil }
 
-      new_master_mtime = File.mtime(config.master_tar_file_path)
+      new_master_mtime = context.master_archive.mtime
 
       current_master_mtime.must_equal new_master_mtime
     end
 
-    it 'it changes master if files have been deleted' do
-      current_master_mtime = File.mtime(config.master_tar_file_path)
+    it 'changes master if files have been deleted' do
+      current_master_mtime = context.master_archive.mtime
 
-      manager.rent
-      FileUtils.rm("#{config.cassette_dir}/test_a.yml")
-      manager.drop_off
-      new_master_mtime = File.mtime(config.master_tar_file_path)
+      context.managed do
+        context.cassette_files.sample.delete
+      end
+
+      new_master_mtime = context.master_archive.mtime
 
       current_master_mtime.wont_equal new_master_mtime
-      manager.rent
-      File.exist?("#{config.cassette_dir}/test_a.yml").must_equal false
     end
 
     it 'it changes master if files have been edited' do
-      current_master_mtime = File.mtime(config.master_tar_file_path)
+      current_master_mtime = context.master_archive.mtime
 
-      manager.rent
-      File.truncate("#{config.cassette_dir}/test_a.yml", 1)
-      manager.drop_off
-      new_master_mtime = File.mtime(config.master_tar_file_path)
+      cassette = context.cassette_files.sample
+      context.managed { cassette.regenerate }
+
+      new_master_mtime = context.master_archive.mtime
 
       current_master_mtime.wont_equal new_master_mtime
-      File.exist?("#{config.cassette_dir}/test_a.yml").must_equal true
+      cassette.exist?.must_equal true
     end
 
     it 'creates master if master does not exist' do
-      manager.rent
-      FileUtils.rm(config.master_tar_file_path)
-      File.exist?(config.master_tar_file_path).must_equal false
+      context.manager.rent
+      context.master_archive.delete
 
-      manager_2 = Blockbuster::Manager.new(config)
-      manager_2.rent
-      manager_2.drop_off
+      context.managed { nil }
 
-      File.exist?(config.master_tar_file_path).must_equal true
+      context.master_archive.exist?.must_equal true
     end
   end
 
   describe 'feature enabled' do
     before do
-      config.enable_deltas = true
-      FileUtils.cp_r("#{base_dir}/deltas/", unique_dir)
+      context.configuration.enable_deltas = true
+      context.delta_files.generate
     end
 
     it 'does not change master if no files have changed' do
-      current_master_mtime = File.mtime(config.master_tar_file_path)
-      manager.rent
-      manager.drop_off
+      current_master_mtime = context.master_archive.mtime
 
-      new_master_mtime = File.mtime(config.master_tar_file_path)
+      context.managed { nil }
+
+      new_master_mtime = context.master_archive.mtime
       current_master_mtime.must_equal new_master_mtime
     end
 
     it 'does not change master if files have been deleted' do
-      current_master_mtime = File.mtime(config.master_tar_file_path)
+      current_master_mtime = context.master_archive.mtime
+      cassette_file = context.cassette_files.sample
 
-      manager.rent
-      FileUtils.rm("#{config.cassette_dir}/test_a.yml")
-      manager.drop_off
-      new_master_mtime = File.mtime(config.master_tar_file_path)
+      context.managed { cassette_file.delete }
+
+      new_master_mtime = context.master_archive.mtime
 
       current_master_mtime.must_equal new_master_mtime
-      manager_2 = Blockbuster::Manager.new(config)
-      manager_2.rent
-      File.exist?("#{config.cassette_dir}/test_a.yml").must_equal true
     end
 
     it 'does not change master if files have been edited' do
-      current_master_mtime = File.mtime(config.master_tar_file_path)
+      current_master_mtime = context.master_archive.mtime
 
-      manager.rent
-      File.truncate("#{config.cassette_dir}/test_a.yml", 1)
-      manager.drop_off
-      new_master_mtime = File.mtime(config.master_tar_file_path)
+      context.managed { context.cassette_files.sample.regenerate }
+
+      new_master_mtime = context.master_archive.mtime
 
       current_master_mtime.must_equal new_master_mtime
-      File.exist?("#{config.cassette_dir}/test_a.yml").must_equal true
     end
 
     it 'creates master if master does not exist' do
-      manager.rent
-      FileUtils.rm(config.master_tar_file_path)
-      File.exist?(config.master_tar_file_path).must_equal false
+      context.manager.rent
+      context.master_archive.delete
 
-      manager_2 = Blockbuster::Manager.new(config)
-      manager_2.rent
-      manager_2.drop_off
+      context.managed { nil }
 
-      File.exist?(config.master_tar_file_path).must_equal true
+      context.master_archive.exist?.must_equal true
     end
 
     it 'untars deltas and does not create one if nothing has changed' do
-      curr_time = Time.now
-      Time.stubs(:now).returns(curr_time)
-      config.current_delta_name = 'delta_a.tar.gz'
-      current_delta_time = File.mtime("#{config.full_delta_directory}/#{Blockbuster::Delta::INITIALIZING_NUMBER}_#{config.current_delta_name}")
+      Timecop.freeze do
+        current_deltas = context.delta_files.to_a
 
-      manager.rent
-      manager.drop_off
+        context.managed { nil }
 
-      new_delta_time = File.mtime("#{config.full_delta_directory}/#{Blockbuster::Delta::INITIALIZING_NUMBER}_#{config.current_delta_name}")
-      current_delta_time.must_equal new_delta_time
-      File.exist?("#{config.full_delta_directory}/#{curr_time.to_i}_#{config.current_delta_name}").must_equal false
+        new_deltas = context.delta_files.to_a
+
+        current_deltas.must_equal new_deltas
+      end
     end
 
     it 'untars deltas and does not create one in if a file from previous delta or master has been deleted' do
-      curr_time = Time.now
-      Time.stubs(:now).returns(curr_time)
-      config.current_delta_name = 'delta_a.tar.gz'
-      current_delta_time = File.mtime("#{config.full_delta_directory}/#{Blockbuster::Delta::INITIALIZING_NUMBER}_#{config.current_delta_name}")
+      Timecop.freeze do
+        binding.pry
+        config.current_delta_name = 'delta_a.tar.gz'
+        current_delta_time = File.mtime("#{config.full_delta_directory}/#{Blockbuster::Delta::INITIALIZING_NUMBER}_#{config.current_delta_name}")
 
-      manager.rent
-      FileUtils.rm("#{config.cassette_dir}/test_b.yml")
-      manager.drop_off
+        manager.rent
+        FileUtils.rm("#{config.cassette_dir}/test_b.yml")
+        manager.drop_off
 
-      new_delta_time = File.mtime("#{config.full_delta_directory}/#{Blockbuster::Delta::INITIALIZING_NUMBER}_#{config.current_delta_name}")
-      current_delta_time.must_equal new_delta_time
-      File.exist?("#{config.full_delta_directory}/#{curr_time.to_i}_#{config.current_delta_name}").must_equal false
+        new_delta_time = File.mtime("#{config.full_delta_directory}/#{Blockbuster::Delta::INITIALIZING_NUMBER}_#{config.current_delta_name}")
+        current_delta_time.must_equal new_delta_time
+        File.exist?("#{config.full_delta_directory}/#{curr_time.to_i}_#{config.current_delta_name}").must_equal false
+      end
     end
 
     it 'untars deltas and recreates it if a file has been changed' do
@@ -218,6 +200,42 @@ describe 'DeltaFeature' do
       Blockbuster::Delta.expects(:initialize_for_each).once.returns([])
       manager.rent
       manager.drop_off
+    end
+
+    describe 'delta_a -> delta 1 -> delta 2' do
+      before do
+        FileUtils.rm(config.master_tar_file_path)
+        FileUtils.rm_rf(config.full_delta_directory)
+        FileUtils.mkdir_p(config.cassette_dir)
+      end
+
+      it 'first creates master, then creates delta 1, then creates delta 2' do
+        config.current_delta_name = 'delta_a.tar.gz'
+
+        Blockbuster::Manager.new(config).tap do |manager|
+          manager.rent
+          FileUtils.cp("#{base_dir}/cassettes/fake_example_response.yml", config.cassette_dir)
+          manager.drop_off
+        end
+
+        config.current_delta_name = 'delta_b.tar.gz'
+
+        Blockbuster::Manager.new(config).tap do |manager|
+          FileUtils.cp("#{base_dir}/cassettes/some_crazy_test.yml", config.cassette_dir)
+          manager.drop_off
+        end
+
+        config.current_delta_name = 'delta_a.tar.gz'
+
+        Blockbuster::Manager.new(config).tap do |manager|
+          manager.rent
+          FileUtils.cp("#{base_dir}/cassettes/match_requests_on.yml", config.cassette_dir)
+          manager.drop_off
+        end
+
+        deltas = Dir.glob("#{config.full_delta_directory}/*").sort
+        deltas.size.must_equal 2
+      end
     end
 
     describe 'master -> delta 1 -> delta 2' do

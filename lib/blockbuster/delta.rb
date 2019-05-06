@@ -72,5 +72,20 @@ module Blockbuster
 
       File.join(configuration.full_delta_directory, target)
     end
+
+    def clean_cassette_file
+      super
+      # cassettes_to_remove = current_files(configuration)
+      # cassettes_to_remove -= [file_path] unless cassettes_to_remove == [file_path]
+      # FileUtils.rm(cassettes_to_remove)
+    end
+
+    def current_files(configuration)
+      current_delta = configuration.current_delta_name
+
+      self.class.files(configuration.full_delta_directory)
+          .select { |file| self.class.file_name_without_timestamp(file) == current_delta }
+          .map { |files| File.join(configuration.full_delta_directory, files) }
+    end
   end
 end
