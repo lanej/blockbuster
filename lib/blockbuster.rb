@@ -1,20 +1,26 @@
 require 'fileutils'
 require 'rubygems/package'
+require 'forwardable'
 require 'zlib'
-
-require 'blockbuster/configuration'
-require 'blockbuster/concerns/file_helpers'
-require 'blockbuster/concerns/output_helpers'
-require 'blockbuster/concerns/extractor'
-require 'blockbuster/concerns/packager'
-require 'blockbuster/master'
-require 'blockbuster/delta'
-require 'blockbuster/comparator'
-require 'blockbuster/extraction_list'
-
-require 'blockbuster/manager'
-require 'blockbuster/version'
+require 'set'
+require 'logger'
 
 # nodoc
-module Blockbuster
-end
+module Blockbuster; end
+
+require 'blockbuster/tar_writer'
+
+require 'blockbuster/configuration'
+require 'blockbuster/cassette'
+require 'blockbuster/cassettes'
+require 'blockbuster/branch'
+require 'blockbuster/branches'
+require 'blockbuster/packager'
+require 'blockbuster/pruner'
+
+require 'blockbuster/account'
+require 'blockbuster/rentals'
+require 'blockbuster/rental'
+require 'blockbuster/manager'
+
+require 'blockbuster/version'

@@ -128,7 +128,7 @@ wipe_cassette_dir: Boolean
   If true, will wipe the existing cassette directory when `rent` is called.
   default: false
 enable_deltas: Boolean (more on this below)
-  Toggle the Delta feature
+  Toggle the Branch feature
   default: false
 delta_directory: String
   Name of the directory to store deltas (relative to test_directory)
@@ -195,7 +195,7 @@ rm test/vcr_cassettes.tar.gz
 rake test
 ```
 
-### Delta feature (*Experimental*)
+### Branch feature (*Experimental*)
 
 If you are working on a project that requires a lot of re-recording, or is in active development with HTTP interactions to different systems and multiple developers working on the project, the benefits of Blockbuster degrade quite quickly.  Merge conflicts happen very frequently since all cassettes are stored in one file, and the only resolution is to re-record everything. 
 

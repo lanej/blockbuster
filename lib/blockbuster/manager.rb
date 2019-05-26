@@ -1,69 +1,59 @@
-require 'forwardable'
+class Blockbuster::Manager
+  attr_reader :branches
+  attr_reader :cassettes
+  attr_reader :configuration
 
-module Blockbuster
-  # Manages cassette packaging and unpackaging
-  class Manager
-    include Blockbuster::OutputHelpers
-    extend Forwardable
+  def initialize(configuration: Blockbuster::Configuration.new)
+    yield configuration if block_given?
 
-    attr_accessor :comparator
+    @configuration = configuration
 
-    def_delegators :comparator, :inventory
+    @branches = Blockbuster::Branches.new(directory: configuration.branches_path,
+                                          cassettes_path: configuration.cassettes_path,
+                                          logger: configuration.logger)
+    @rentals = Blockbuster::Rentals.new(logger: configuration.logger)
+    @cassettes = Blockbuster::Cassettes.new(directory: configuration.cassettes_path,
+                                            logger: configuration.logger)
+  end
 
-    def initialize(instance_configuration = Blockbuster::Configuration.new)
-      yield configuration if block_given?
+  def rent
+    branches.rent.each { |rental| rentals.choose(rental) }
 
-      @configuration ||= instance_configuration
+    # FIXME: only purchase what is inserted
+    rentals.insert
+  end
 
-      @comparator      = Comparator.new(@configuration)
-      @extraction_list = ExtractionList.new(@comparator, @configuration)
-    end
+  def drop_off
+    configuration.branches_path.mkpath
 
-    def configuration
-      @configuration ||= Blockbuster::Configuration.new
-    end
+    watched = rentals.watch(selection)
 
-    # extracts cassettes from a tar.gz file
-    #
-    # tracks a md5 hash of each file in the tarball
-    # FIXME: remove direct File usage
-    def rent
-      master_file_path = @extraction_list.master.file_path
+    Blockbuster::Packager.call(branches, watched,
+                               next_branch: next_branch,
+                               logger: configuration.logger)
+    # if branches.count > 1
+    #   Blockbuster::Pruner.call(branches, watched,
+    #                            logger: configuration.logger)
+    # end
+  end
 
-      unless File.exist?(master_file_path)
-        silent_puts "File does not exist: #{master_file_path}."
-        return false
-      end
+  alias setup rent
+  alias teardown drop_off
 
-      remove_existing_cassette_directory if configuration.wipe_cassette_dir
+  protected
 
-      silent_puts "Extracting VCR cassettes to #{configuration.cassette_dir}"
+  attr_reader :rentals
 
-      @extraction_list.extract_cassettes
+  # FIXME: don't always watch all cassettes
+  def selection
+    cassettes.to_a
+  end
 
-      comparator.store_current_delta_files if configuration.deltas_enabled?
-    end
-
-    # repackages cassettes into a compressed tarball
-    def drop_off(force: false)
-      return unless comparator.rewind?(configuration.cassette_files) || force
-
-      silent_puts "Recreating cassette file #{@extraction_list.primary.target_path}"
-      @extraction_list.primary.update_cassette_file
-    end
-
-    alias setup rent
-    alias teardown drop_off
-
-    private
-
-    def remove_existing_cassette_directory
-      return if configuration.local_mode
-
-      dir = configuration.cassette_dir
-
-      silent_puts "Wiping cassettes directory: #{dir}"
-      FileUtils.rm_rf(dir) if Dir.exist?(dir)
-    end
+  def next_branch
+    Blockbuster::Branch.build(
+      directory: configuration.branches_path,
+      cassettes_path: configuration.cassettes_path,
+      time: Time.now, name: configuration.branch
+    )
   end
 end

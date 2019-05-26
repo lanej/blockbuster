@@ -10,3 +10,5 @@
 /test/deltas/*gz
 /test/*gz
 !/test/fixtures/*gz
+!spec/examples.txt
+spec/examples.txt
