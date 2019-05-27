@@ -1,4 +1,6 @@
 class Blockbuster::Archive
+  TAR_EXTNAME = '.tar.gz'.freeze
+
   class << self
     def for(archive)
       archivers.fetch(archive.extname).new(archive)
@@ -6,8 +8,12 @@ class Blockbuster::Archive
 
     def archivers
       @archivers ||= {
-        '.tar.gz' => Blockbuster::TarArchive,
+        TAR_EXTNAME => Blockbuster::TarArchive,
       }
+    end
+
+    def glob
+      '*{' + archivers.keys.join(',') + '}'
     end
   end
 end

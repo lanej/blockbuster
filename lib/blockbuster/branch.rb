@@ -3,10 +3,8 @@ class Blockbuster::Branch < Pathname
   extend Forwardable
 
   ENCODING = /^([0-9]+)_(\w+)\./
-  # FIXME: this is not longer safe
-  EXTENSION = '.tar.gz'.freeze
 
-  def self.build(directory:, cassettes_path:, time:, name:, extname: EXTENSION)
+  def self.build(directory:, cassettes_path:, time:, name:, extname:)
     new(directory.join("#{time.to_i}_#{name}#{extname}")).tap do |branch|
       branch.send(:directory=, directory)
       branch.send(:cassettes_path=, cassettes_path)
@@ -20,9 +18,8 @@ class Blockbuster::Branch < Pathname
     end
   end
 
-  # FIXME: maybe compile a regex based on supported extnames
   def self.glob
-    "*#{EXTENSION}"
+    Blockbuster::Archive.glob
   end
 
   def_delegators :to_a, :size

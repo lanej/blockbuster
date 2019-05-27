@@ -51,9 +51,11 @@ class Blockbuster::Manager
 
   def next_branch
     Blockbuster::Branch.build(
-      directory: configuration.branches_path,
       cassettes_path: configuration.cassettes_path,
-      time: Time.now, name: configuration.branch
+      directory: configuration.branches_path,
+      extname: configuration.archive_extname,
+      name: configuration.branch,
+      time: Time.now,
     )
   end
 end
