@@ -18,8 +18,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_development_dependency 'bundler', '~> 2.0'
-  spec.add_development_dependency 'bundler-audit'
-  spec.add_development_dependency 'pry-nav'
   spec.add_development_dependency 'rspec', '~> 3.8'
   spec.add_development_dependency 'rubocop-airbnb', '~> 2.0'
   spec.add_development_dependency 'timecop', '~> 0.9'

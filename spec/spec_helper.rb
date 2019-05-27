@@ -1,7 +1,8 @@
-require 'pry'
 require 'blockbuster'
 require 'tmpdir'
 require 'securerandom'
+
+Bundler.require(:test)
 
 Dir[File.expand_path('{support,matchers}/**/*.rb', __dir__)].each { |f| require(f) }
 
