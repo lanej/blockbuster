@@ -14,18 +14,7 @@ class Blockbuster::Branches
   end
 
   def rent
-    flat_map do |branch|
-      branch.map do |entry|
-        next unless entry.file?
-
-        cassette = Blockbuster::Cassette.for(
-          cassettes_path.dirname.join(entry.full_name),
-          directory: cassettes_path,
-        )
-
-        Blockbuster::Rental.new(branch: branch, stat: entry.header, cassette: cassette)
-      end
-    end
+    flat_map { |branch| branch.rent }
   end
 
   def each

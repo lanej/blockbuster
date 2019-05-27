@@ -8,15 +8,17 @@ require 'logger'
 # nodoc
 module Blockbuster; end
 
+require 'blockbuster/cassette_archive'
+
 require 'blockbuster/tar_writer'
 require 'blockbuster/tar_archive'
 
 require 'blockbuster/archive'
-require 'blockbuster/configuration'
-require 'blockbuster/cassette'
-require 'blockbuster/cassettes'
 require 'blockbuster/branch'
 require 'blockbuster/branches'
+require 'blockbuster/cassette'
+require 'blockbuster/cassettes'
+require 'blockbuster/configuration'
 require 'blockbuster/packager'
 require 'blockbuster/pruner'
 

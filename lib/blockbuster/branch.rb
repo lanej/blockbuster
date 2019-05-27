@@ -19,22 +19,23 @@ class Blockbuster::Branch < Pathname
   end
 
   def self.glob
-    Blockbuster::Archive.glob
+    '*' + Blockbuster::Archive.glob
   end
 
   def_delegators :to_a, :size
-  def_delegators :archive, :read, :write, :each
+  def_delegators :archive, :read, :write, :each_cassette
 
   attr_reader :directory
   attr_reader :cassettes_path
 
   def cassettes
-    map do |entry|
-      Blockbuster::Cassette.for(
-        cassettes_path.dirname.join(entry.full_name),
-        directory: cassettes_path,
-      )
-    end
+    each.to_a
+  end
+
+  def each(&block)
+    return to_enum unless block_given?
+
+    each_cassette(cassettes_path, &block)
   end
 
   def epoch_timestamp
@@ -63,6 +64,12 @@ class Blockbuster::Branch < Pathname
 
   def extname
     basename.sub(/[^\.]+/, '').to_s
+  end
+
+  def rent
+    archive.each_cassette_with_stat(cassettes_path).map do |cassette, stat|
+      Blockbuster::Rental.new(branch: self, cassette: cassette, stat: stat)
+    end
   end
 
   private

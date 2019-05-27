@@ -13,7 +13,7 @@ class Blockbuster::Archive
     end
 
     def glob
-      '*{' + archivers.keys.join(',') + '}'
+      '{' + archivers.keys.join(',') + '}'
     end
   end
 end
