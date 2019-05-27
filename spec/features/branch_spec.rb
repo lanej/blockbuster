@@ -39,8 +39,30 @@ RSpec.describe 'blockbuster', type: :feature do
 
         before { master.merge(feature_branch) }
 
+        specify { expect(master).to insert(feature_cassette) }
         specify { expect { next_rental }.not_to change { master.branches.to_a } }
         specify { expect { next_rental }.not_to change { master.cassettes.to_a } }
+      end
+
+      context 'and creates a new cassette' do
+        let(:new_feature_cassette) { feature_branch.cassettes.get('feature') }
+
+        before { feature_branch.rental { insert_cassette(new_feature_cassette) } }
+
+        context 'when merged to master' do
+          subject(:next_rental) do
+            master.rental do
+              insert_cassette(master_cassette)
+              insert_cassette(master.cassettes.get(new_feature_cassette.name))
+            end
+          end
+
+          before { master.merge(feature_branch) }
+
+          specify { expect(master).to insert(feature_cassette, new_feature_cassette) }
+          specify { expect { next_rental }.not_to change { master.branches.to_a } }
+          specify { expect { next_rental }.not_to change { master.cassettes.to_a } }
+        end
       end
     end
   end
