@@ -5,10 +5,6 @@ class Blockbuster::Cassette < Pathname
 
   attr_reader :cassettes_path
 
-  def package_path
-    Pathname.new(self).relative_path_from(cassettes_path.parent)
-  end
-
   def relative_path
     Pathname.new(self).relative_path_from(cassettes_path)
   end

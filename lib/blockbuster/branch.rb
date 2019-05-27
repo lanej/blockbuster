@@ -3,10 +3,11 @@ class Blockbuster::Branch < Pathname
   extend Forwardable
 
   ENCODING = /^([0-9]+)_(\w+)\./
+  # FIXME: this is not longer safe
   EXTENSION = '.tar.gz'.freeze
 
-  def self.build(directory:, cassettes_path:, time:, name:)
-    new(directory.join("#{time.to_i}_#{name}#{EXTENSION}")).tap do |branch|
+  def self.build(directory:, cassettes_path:, time:, name:, extname: EXTENSION)
+    new(directory.join("#{time.to_i}_#{name}#{extname}")).tap do |branch|
       branch.send(:directory=, directory)
       branch.send(:cassettes_path=, cassettes_path)
     end
@@ -15,35 +16,20 @@ class Blockbuster::Branch < Pathname
   def self.load(pathname, directory:, cassettes_path:)
     new(pathname).tap do |branch|
       branch.send(:directory=, directory)
-      branch.send(:cassettes_path=,  cassettes_path)
+      branch.send(:cassettes_path=, cassettes_path)
     end
   end
 
+  # FIXME: maybe compile a regex based on supported extnames
   def self.glob
     "*#{EXTENSION}"
   end
 
   def_delegators :to_a, :size
+  def_delegators :archive, :read, :write, :each
 
   attr_reader :directory
   attr_reader :cassettes_path
-
-  def each
-    return to_enum unless block_given?
-    return unless exist?
-
-    open(File::RDONLY, binmode: true) do |file|
-      Zlib::GzipReader.wrap(file) do |gz|
-        Gem::Package::TarReader.new(gz) do |tar|
-          tar.each_entry do |entry|
-            next unless entry.file?
-
-            yield entry
-          end
-        end
-      end
-    end
-  end
 
   def cassettes
     map do |entry|
@@ -78,7 +64,15 @@ class Blockbuster::Branch < Pathname
     "#<#{self.class.name}:#{basename}>"
   end
 
+  def extname
+    basename.sub(/[^\.]+/, '').to_s
+  end
+
   private
+
+  def archive
+    Blockbuster::Archive.for(self)
+  end
 
   attr_writer :directory
   attr_writer :cassettes_path

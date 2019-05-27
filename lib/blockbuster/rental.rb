@@ -22,11 +22,10 @@ class Blockbuster::Rental
   protected
 
   def write_cassette
-    branch.each do |entry|
-      next unless entry.full_name == cassette.package_path
-
-      cassette.open('w', binmode: true) { |cassette_io| IO.copy_stream(entry, cassette_io) }
-      break
+    branch.read(cassette) do |entry|
+      cassette.open('w', binmode: true) do |cassette_io|
+        IO.copy_stream(entry, cassette_io)
+      end
     end
   end
 end

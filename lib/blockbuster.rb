@@ -9,7 +9,9 @@ require 'logger'
 module Blockbuster; end
 
 require 'blockbuster/tar_writer'
+require 'blockbuster/tar_archive'
 
+require 'blockbuster/archive'
 require 'blockbuster/configuration'
 require 'blockbuster/cassette'
 require 'blockbuster/cassettes'
