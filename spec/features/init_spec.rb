@@ -2,7 +2,6 @@ RSpec.describe 'blockbuster', type: :feature do
   subject { blockbuster.manager }
 
   let(:blockbuster) { SupportBlockbuster.new }
-  let(:cassette) { blockbuster.cassettes.get('proto') }
 
   before { blockbuster.setup }
 
@@ -22,6 +21,8 @@ RSpec.describe 'blockbuster', type: :feature do
 
   context 'when a rental creates a cassette' do
     subject(:rental) { blockbuster.rental { insert_cassette(cassette) } }
+
+    let(:cassette) { blockbuster.cassettes.get('master') }
 
     specify { expect { rental }.to change { blockbuster.branches.count }.by(1) }
     specify { expect { rental }.to change { blockbuster.cassettes.to_a }.to([cassette]) }
@@ -45,7 +46,9 @@ RSpec.describe 'blockbuster', type: :feature do
   end
 
   context 'when rental modifies cassette' do
-    subject(:rent_and_modify) { blockbuster.rental { modify_cassette(cassette) } }
+    subject(:rent_and_modify) { blockbuster.rental { insert_cassette(cassette, modify: true) } }
+
+    let(:cassette) { blockbuster.cassettes.get('master') }
 
     before { blockbuster.rental { insert_cassette(cassette) } }
 

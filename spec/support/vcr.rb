@@ -20,22 +20,16 @@ module SupportVcr
         http_version: "1.1"
   YAML
 
-  def insert_cassette(cassette)
-    return cassette.open {} if cassette.exist?
+  def insert_cassette(cassette, modify: false)
+    cassette.dirname.mkpath
 
-    create_cassette(cassette)
-  end
+    if !modify && cassette.exist?
+      cassette.read
+      return
+    end
 
-  def modify_cassette(cassette)
     cassette.write(TEMPLATE % SecureRandom.base64)
     FileUtils.touch(cassette, mtime: Time.now)
-  end
-
-  def create_cassette(cassette)
-    raise "#{cassette} already exists" if cassette.exist?
-
-    cassette.dirname.mkpath
-    modify_cassette(cassette)
   end
 end
 

@@ -31,7 +31,7 @@ RSpec.describe 'blockbuster', type: :feature do
 
       before do
         master.rental { insert_cassette(master_cassette) }
-        feature_branch.rental { modify_cassette(feature_cassette) }
+        feature_branch.rental { insert_cassette(feature_cassette, modify: true) }
       end
 
       context 'when merged to master' do
