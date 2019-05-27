@@ -1,8 +1,8 @@
 language: ruby
 rvm:
-  - 2.3.0
-before_install: gem install bundler -v 1.11.2
+  - 2.3.8
+  - 2.5.3
 script:
     - bundle exec bundle-audit check --update
-    - bundle exec rake rubocop
-    - bundle exec rake test
+    - bundle exec rubocop -D
+    - bundle exec rspec
