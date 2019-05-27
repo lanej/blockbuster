@@ -1,24 +1,27 @@
 class Blockbuster::Cassette < Pathname
   def self.for(filename, directory:)
-    new(filename).tap do |cassette|
-      cassette.send(:package_path=, Pathname.new(cassette).relative_path_from(directory.parent))
-      cassette.send(:relative_path=, Pathname.new(cassette).relative_path_from(directory))
-    end
+    new(filename).tap { |cassette| cassette.send(:cassettes_path=, directory) }
   end
 
-  attr_reader :relative_path
-  attr_reader :package_path
+  attr_reader :cassettes_path
+
+  def package_path
+    Pathname.new(self).relative_path_from(cassettes_path.parent)
+  end
+
+  def relative_path
+    Pathname.new(self).relative_path_from(cassettes_path)
+  end
 
   def name
-    basename.to_s.sub(extname, '')
+    relative_path.to_s.sub(extname, '')
   end
 
   def inspect
-    super + "[#{mtime.to_i}]"
+    File.join(cassettes_path.parent.basename.to_s, relative_path.to_s)
   end
 
   private
 
-  attr_writer :package_path
-  attr_writer :relative_path
+  attr_writer :cassettes_path
 end
