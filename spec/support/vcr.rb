@@ -33,4 +33,4 @@ module SupportVcr
   end
 end
 
-RSpec.configure { |config| config.include(SupportVcr) }
+RSpec.configuration.include(SupportVcr)

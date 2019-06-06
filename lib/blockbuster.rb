@@ -4,6 +4,7 @@ require 'forwardable'
 require 'zlib'
 require 'set'
 require 'logger'
+require 'zip'
 
 # nodoc
 module Blockbuster; end
@@ -12,6 +13,8 @@ require 'blockbuster/cassette_archive'
 
 require 'blockbuster/tar_writer'
 require 'blockbuster/tar_archive'
+
+require 'blockbuster/zip_archive'
 
 require 'blockbuster/archive'
 require 'blockbuster/branch'

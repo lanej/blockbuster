@@ -11,6 +11,7 @@ class Blockbuster::Configuration
 
   ARCHIVER_MAP = {
     tar: Blockbuster::Archive::TAR_EXTNAME,
+    zip: Blockbuster::Archive::ZIP_EXTNAME,
   }.freeze
 
   attr_writer :branch

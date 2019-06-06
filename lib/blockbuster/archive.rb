@@ -1,5 +1,6 @@
 class Blockbuster::Archive
   TAR_EXTNAME = '.tar.gz'.freeze
+  ZIP_EXTNAME = '.zip'.freeze
 
   class << self
     def for(archive)
@@ -9,6 +10,7 @@ class Blockbuster::Archive
     def archivers
       @archivers ||= {
         TAR_EXTNAME => Blockbuster::TarArchive,
+        ZIP_EXTNAME => Blockbuster::ZipArchive,
       }
     end
 

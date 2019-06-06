@@ -35,11 +35,16 @@ class SupportBlockbuster
         end
   end
 
-  def setup
+  def setup(scaffold: false)
     @directory = Pathname.new(Dir.mktmpdir(name))
 
     configuration.cassettes_path = File.join(directory, configuration.cassettes_path)
     configuration.branches_path = File.join(directory, configuration.branches_path)
+
+    if scaffold
+      configuration.cassettes_path.mkpath
+      configuration.branches_path.mkpath
+    end
   end
 
   def teardown
