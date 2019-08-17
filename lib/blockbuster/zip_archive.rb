@@ -2,11 +2,9 @@ class Blockbuster::ZipArchive
   include Blockbuster::CassetteArchive
 
   def read(cassette)
-    entry_name = package_path(cassette)
-    each do |entry|
-      next unless entry_name == entry.full_name
-      return yield entry
-    end
+    yield Zip::File.open(pathname.to_path).
+      find_entry(cassette.relative_path.to_path).
+      get_input_stream
   end
 
   def write(cassettes)
@@ -28,7 +26,7 @@ class Blockbuster::ZipArchive
 
     each_entry do |entry|
       yield cassette_for(cassettes_path, entry),
-            Stat.new(entry.mode, entry.mtime)
+            Stat.new(entry.unix_perms, entry.time)
     end
   end
 
@@ -52,5 +50,9 @@ class Blockbuster::ZipArchive
         yield entry
       end
     end
+  end
+
+  def package_path(cassette)
+    Pathname.new(cassette).relative_path_from(cassette.cassettes_path)
   end
 end

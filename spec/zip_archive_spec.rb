@@ -14,7 +14,7 @@ RSpec.describe Blockbuster::ZipArchive do
 
   after { blockbuster.teardown }
 
-  describe '#write' do
+  context 'after write' do
     subject(:write) { archive.write([cassette]) }
 
     before { write }
@@ -22,6 +22,15 @@ RSpec.describe Blockbuster::ZipArchive do
     specify do
       expect(archive.each_cassette(blockbuster.cassettes_path)).
         to contain_exactly(cassette)
+    end
+
+    specify do
+      expect(archive.each_cassette_with_stat(blockbuster.cassettes_path)).
+        to contain_exactly([cassette, duck_type(:mode, :mtime)])
+    end
+
+    specify do
+      expect { |b| archive.read(cassette, &b) }.to yield_with_args(duck_type(:read))
     end
   end
 end
